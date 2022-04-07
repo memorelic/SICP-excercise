@@ -78,8 +78,9 @@
         (else else-clause)))
 
 ;; Eva demonstrates the program for Alyssa:
-(new-if (= 2 3) 0 5)
-(new-if (= 1 1) 0 5)
+
+;(new-if (= 2 3) 0 5)
+;(new-if (= 1 1) 0 5)
 
 ;; Delighted, Alyssa uses new-if to rewrite the square-root program:
 ; 
@@ -176,3 +177,16 @@
 ;; to the square-root procedure. (In Section 1.3.4 we will see how to
 ;; implement Newton’s method in general as an abstraction of these
 ;; square-root and cube-root procedures.)
+
+(define cube-root
+  (lambda (x) (cube-root-iter 1.0 x)))
+
+(define cube-root-iter
+  (lambda (guess x)
+    (if (good-enough2? guess (improve-cube guess x))
+        guess
+        (cube-root-iter (improve-cube guess x) x))))
+
+(define improve-cube
+  (lambda (guess x)
+    (/ (+ (* guess 2) (/ x (square guess))) 3)))
