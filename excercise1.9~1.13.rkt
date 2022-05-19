@@ -30,11 +30,11 @@
                   [else (A (- x 1) (A x (- y 1)))])))
 
 ;; What are the values of the following expression?
-(A 1 10) ;; (A 0 (A 1 9)) => (A 0 (A 0 (A 1 8) => ... => (A 0 (A 0 ... (A 0 (A 1 1))))))) => 2^10 = 1024
-(A 2 3)  ;; (A 1 (A 2 3)) => (A 1 (A 1 (A 2 2))) => (A 1 (A 1 (A 1 (A 2 1)))) => (A 1 (A 1 (A 1 2)))
+;(A 1 10) ;; (A 0 (A 1 9)) => (A 0 (A 0 (A 1 8) => ... => (A 0 (A 0 ... (A 0 (A 1 1))))))) => 2^10 = 1024
+;(A 2 3)  ;; (A 1 (A 2 3)) => (A 1 (A 1 (A 2 2))) => (A 1 (A 1 (A 1 (A 2 1)))) => (A 1 (A 1 (A 1 2)))
          ;; (A 1 (A 1 (A 0 (A 1 1)))) => (A 1 (A 1 (A 0 2))) => (A 1 (A 1 4)) ... => (A 1 (A 0 (A 1 3))
          ;;  ...=> 2^(2^4) = 65536
-(A 3 3)  ;; => (A 1 16) => 65536
+;(A 3 3)  ;; => (A 1 16) => 65536
 
 ;; Consider the following procedures, where A is the procedure defined above:
 (define (f n) (A 0 n)) ;; => f(x) = 2*x
@@ -46,3 +46,98 @@
 ;; integer values of n.
 ;; For example, (k n) computes 5n^2
 
+
+;; Example: Counting change
+
+(define (count-change amount) (cc amount 5))
+
+(define (cc amount kinds-of-coins)
+  (cond [(= amount 0) 1]
+        [(or (< amount 0) (= kinds-of-coins 0)) 0]
+        [else
+         (+ (cc amount (- kinds-of-coins 1))
+            (cc (- amount (first-denomination kinds-of-coins)) kinds-of-coins))]))
+
+(define (first-denomination kinds-of-coins)
+  (cond [(= kinds-of-coins 1) 1]
+        [(= kinds-of-coins 2) 5]
+        [(= kinds-of-coins 3) 10]
+        [(= kinds-of-coins 4) 25]
+        [(= kinds-of-coins 5) 50]))
+
+;; Excercise 1.11:
+;; A function f is defined by the rule that f(n) = n if n<3 and f(n) = f(n-1) + 2f(n-2) + 3f(n-3) if n>= 3
+;; Write a procedure that computes f by means of a recursive process. Write a procedure that computes f by
+;; means of an iterative process.
+
+(define f-recursive
+  (lambda (n)
+    (if (< n 3)
+        n
+        (+ (f-recursive (- n 1))
+           (* 2 (f-recursive (- n 2)))
+           (* 3 (f-recursive (- n 3)))))))
+
+(define (f-iterative n)
+  (define (f-loop n-1 n-2 n-3 nth)
+    (if (= n nth)
+        n-1
+        (f-loop (+ n-1 (* 2 n-2) (* 3 n-3))
+                n-1
+                n-2
+                (+ 1 nth))))
+  (if (< n 3)
+      n
+      (f-loop 2 1 0 2)))
+
+;; Excercise 1.12:
+;; The following pattern of numbers is called Pascal's triangle.
+; 
+;         1
+;       1   1
+;     1   2   1
+;   1   3   3   1
+; 1   4   6   4   1
+;        ...
+
+;; The numbers at the edge of the triangle are all 1, and each number
+;; inside the triangle is the sum of the two numbers above it.
+;; Write a procedure that computes elements of Pascal's triangle by
+;; means of a recursive process
+
+
+
+
+;; the value of nth row, mth column's element
+(define (triangle-item row col)
+  (if (or (= col 1) (= col row))
+      1
+      (+ (triangle-item (- row 1) (- col 1))
+         (triangle-item (- row 1) col))))
+
+;; print a pascal line
+(define (display-row n)
+  (define (column-iter i)
+    (display (triangle-item n i)) (display " ")
+    (if (= i n)
+        (newline)
+        (column-iter (+ i 1))))
+  (column-iter 1))
+
+;; print n rows Pascal's triangle
+(define (display-pascal n)
+  (define (display-pascal-iter i)
+    (display-row i)
+    (if (= i n)
+        (void)
+        (display-pascal-iter (+ i 1))))
+  (display-pascal-iter 1))
+
+;; Excercise 1.13:
+;; Prove that Fib(n) is the closest integer to φ^n / sqrt(5),
+;; where φ = (1 + sqrt(5)) / 2. Hint: Let ψ = (1 - sqrt(5)) / 2.
+;; Use induction and the definition of the Fibonacci numbers to prove
+;; that Fib(n) = (φ^n - ψ^n) / sqrt(5)
+
+;; Prove:
+;; https://www.ysagade.nl/2015/04/05/sicp-fib-proof/
