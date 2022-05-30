@@ -25,6 +25,12 @@
 (define (newtons-method g guess)
   (fixed-point (newton-transform g) guess))
 
+(define (average v1 v2)
+  (/ (+ v1 v2) 2))
+
+(define (average-damp f)
+  (lambda (x) (average x (f x))))
+
 ;; Excercise 1.40:
 ;; Define a procedure cubic that can be used together
 ;; with the newtons-method procedure in expressions of the form
@@ -118,4 +124,98 @@
 (define (nth-smooth f n)
   ((repeated smooth n) f))
 
-;; 
+;; Excercise 1.45:
+;; We saw in Section 1.3.3 that attempting to compute
+;; square roots by naively finding a fixed point of y |-> x/y does not
+;; converge, and that this can be fixed by average damping. The same
+;; method works for finding cube roots as fixed points of the average damped y |-> x/y^2.
+;; Unfortunately, the process does not work for
+;; fourth roots—a single average damp is not enough to make a fixedpoint search for y
+;; y |-> x/y^3 converge.
+;; On the other hand, if we average damp twice(i.e.,use the average damp of the average damp of
+;; y |→ x/y^3) the fixed-point search does converge. Do some experiments to determine 
+;; how many average damps are required to compute nth roots
+;; as a fixed-point search based upon repeated average damping of y |-> x/y^(n-1)
+;; Use this to implement a simple procedure for computing n-th roots using fixed-point, average-damp,
+;; and the repeated procedure of Excercise 1.43. Assume that any arithmetic operations you need are
+;; available as primitives.
+
+(define (expt base n)
+  (if (= n 0)
+      1
+      ((repeated (lambda (x) (* base x)) n) 1)))
+
+(define (average-damp-n-times f n)
+  ((repeated average-damp n) f))
+
+;; (define (nth-root x nth)
+;;  (fixed-point 
+;;    ((repeated average-damp (floor (log nth 2))) 
+;;    (lambda (y) 
+;;      (/ x (power y (- nth 1)))))
+;;   1.0))
+
+(define (damped-nth-root n damp-times)
+  (lambda (x)
+    (fixed-point
+     (average-damp-n-times
+      (lambda (y)
+        (/ x (expt y (- n 1))))
+      damp-times)
+     1.0)))
+
+;; n 次方根	        1	2	3	4	5	6	7	8	...	15	16	...	31	32	...
+;; 收敛所需的平均阻尼次数	1	1	1	2	2	2	2	3	...	3	4	...	4	5	...
+;; 计算n次方根的不动点收敛，最少需要 log2(n) 向下取整 次平均阻尼
+
+(define (damped-times n)
+  (floor (log n 2)))
+
+(define (nth-root n)
+  (damped-nth-root n (damped-times n)))
+
+;(define sqrt (nth-root 2))
+;(sqrt (* 3 3))
+
+;; Excercise 1.46:
+;; Several of the numerical methods described in
+;; this chapter are instances of an extremely general computational
+;; strategy known as iterative improvement. Iterative improvement
+;; says that, to compute something, we start with an initial guess
+;; for the answer, test if the guess is good enough, and otherwise
+;; improve the guess and continue the process using the improved
+;; guess as the new guess. Write a procedure iterative-improve
+;; that takes two procedures as arguments: a method for telling
+;; whether a guess is good enough and a method for improving a
+;; guess. Iterative-improve should return as its value a procedure
+;; that takes a guess as argument and keeps improving the guess
+;; until it is good enough. Rewrite the sqrt procedure of Section
+;; 1.1.7 and the fixed-point procedure of Section 1.3.3 in terms of
+;; iterative-improve.
+
+(define (iterative-improve close-enough? improve)
+    (lambda (first-guess)
+        (define (try guess)
+            (let ((next (improve guess)))
+                (if (close-enough? guess next)
+                    next
+                    (try next))))
+        (try first-guess)))
+
+;(define (fixed-point f first-guess)
+;    (define tolerance 0.00001)
+;    (define (close-enough? v1 v2)
+;        (< (abs (- v1 v2)) tolerance))
+;    (define (improve guess)
+;        (f guess))
+;    ((iterative-improve close-enough? improve) first-guess))
+
+;(define (sqrt x)
+;    (define dx 0.00001)
+;    (define (close-enough? v1 v2)
+;        (< (abs (- v1 v2)) dx))
+;  (define (average x y)
+;        (/ (+ x y) 2))
+;    (define (improve guess)
+;        (average guess (/ x guess))) 
+;    ((iterative-improve close-enough? improve) 1.0))
