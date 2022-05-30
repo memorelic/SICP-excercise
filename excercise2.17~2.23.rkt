@@ -65,3 +65,140 @@
 ;; and no-more? in terms of primitive operations on list
 ;; structures. Does the order of the list coin-values affect the answer
 ;; produced by cc? Why or why not?
+
+(define (first-denomination coins)
+  (car coins))
+
+(define (except-first-denomination coins)
+  (cdr coins))
+
+(define (no-more? coins)
+  (null? coins))
+
+;(cc 100 us-coins)
+
+;; The order of the list coin-values does not affect the answer,
+;; because both getting coin value and using coin value are not related to order.
+
+;; Excercise 2.20:
+;; The procedures +, *, and list take arbitrary numbers
+;; of arguments. One way to define such procedures is to use
+;; define with dotted-tail notation. In a procedure definition, a parameter
+;; list that has a dot before the last parameter name indicates
+;; that, when the procedure is called, the initial parameters (if any)
+;; will have as values the initial arguments, as usual, but the final parameter’s
+;; value will be a list of any remaining arguments. For instance,
+;; given the definition
+;; (define (f x y . z) <body>)
+;; the procedure f can be called with two or more arguments. If we
+;; evaluate
+;; (f 1 2 3 4 5 6)
+;; then in the body of f, x will be 1, y will be 2, and z will be the list
+;; (3 4 5 6). Given the definition
+;; (define (g . w) <body>)
+;; the procedure g can be called with zero or more arguments. If we
+;; evaluate
+;; (g 1 2 3 4 5 6)
+;; then in the body of g, w will be the list (1 2 3 4 5 6).
+;; Use this notation to write a procedure same-parity that takes one
+;; or more integers and returns a list of all the arguments that have
+;; the same even-odd parity as the first argument. For example,
+;; (same-parity 1 2 3 4 5 6 7)
+;; => (1 3 5 7)
+;; (same-parity 2 3 4 5 6 7)
+;; => (2 4 6)
+
+(define (same-parity x . l)
+  (if (even? x)
+      (filter even? (cons x l))
+      (filter odd? (cons x l))))
+
+;; Excercise 2.21:
+;; The procedure square-list takes a list of numbers
+;; as argument and returns a list of the squares of those numbers.
+
+;; (square-list (list 1 2 3 4))
+;; => (1 4 9 16)
+
+(define (square-list items)
+  (define (square x) (* x x))
+  (if (null? items)
+      '()
+      (cons (square (car items)) (square-list (cdr items)))))
+
+(define (square-list2 items)
+  (define (square x) (* x x))
+  (map square items))
+
+;; Excercise 2.22:
+;; Louis Reasoner tries to rewrite the first square-list
+;; procedure of Exercise 2.21 so that it evolves an iterative process:
+
+(define (Louis-square-list items)
+  (define (square x) (* x x))
+  (define (iter things answer)
+    (if (null? things)
+        answer
+        (iter (cdr things)
+              (cons (square (car things))
+                    answer))))
+  (iter items '()))
+
+;; Unfortunately, defining square-list this way produces the answer
+;; list in the reverse order of the one desired. Why?
+
+;; Louis then tries to fix his bug by interchanging the arguments to
+;; cons:
+
+(define (Louis-square-list-improve items)
+  (define (square x) (* x x))
+  (define (iter things answer)
+    (if (null? things)
+        answer
+        (iter (cdr things)
+              (cons answer
+                    (square (car things))))))
+  (iter items '()))
+
+;; The first one doesn't work because it conses the last item from the 
+;; front of the list to the answer, then gets the next item from the 
+;; front, etc.
+
+;; The improved version conses the answer to the squared value,
+;; but the answer is a list, so you'll end up with (list (list 
+;; ...) lastest-square).
+
+;; one of the right answers:
+(define (square-list-improve items)
+  (define (square x) (* x x))
+  (define (iter things answer)
+    (if (null? things)
+        answer
+        (iter (cdr things)
+              (append answer
+                    (list (square (car things)))))))
+  (iter items '()))
+
+;; Excercise 2.23:
+;; The procedure for-each is similar to map. It takes
+;; as arguments a procedure and a list of elements. However, rather
+;; than forming a list of the results, for-each just applies the procedure
+;; to each of the elements in turn, from left to right. The values
+;; returned by applying the procedure to the elements are not used
+;; at all—for-each is used with procedures that perform an action,
+;; such as printing. For example,
+
+;(for-each (lambda (x)
+;            (newline)
+;            (display x))
+;          (list 57 321 88))
+
+; => 57
+;    321
+;    88
+
+(define (my-for-each proc items)
+  (if (null? items)
+      (void)
+      (begin (proc (car items)) (my-for-each proc (cdr items)))))
+  
