@@ -117,9 +117,31 @@
 ;; and branch-structure, which return the components
 ;; of a branch.
 
+(define (left-branch mobile)
+  (car mobile))
+(define (right-branch mobile)
+  (car (cdr mobile)))
+
+(define (branch-length branch)
+  (car branch))
+(define (branch-structure branch)
+  (car (cdr branch)))
+
 ;; b):
 ;; Using your selectors, define a procedure total-weight that returns
 ;; the total weight of a mobile.
+
+(define (hangs-another-mobile? branch)
+  (pair? (branch-structure branch)))
+
+(define (branch-weight branch)
+  (if (hangs-another-mobile? branch)
+      (total-weight (branch-structure branch))
+      (branch-structure branch)))
+  
+(define (total-weight mobile)
+  (+ (branch-weight (left-branch mobile))
+     (branch-weight (right-branch mobile))))
 
 ;; c):
 ;; A mobile is said to be balanced if the torque applied by its topleft
@@ -130,9 +152,50 @@
 ;; balanced. Design a predicate that tests whether a binary mobile
 ;; is balanced.
 
+(define (branch-torque branch)
+  (* (branch-length branch)
+     (branch-weight branch)))
+
+(define (same-torque? left right)
+  (= (branch-torque left)
+     (branch-torque right)))
+
+(define (mobile-balance? mobile)
+    (let ((left (left-branch mobile))
+          (right (right-branch mobile)))
+      (and                                        
+       (same-torque? left right)
+       (branch-balance? left)
+       (branch-balance? right))))
+
+(define (branch-balance? branch)
+  (if (hangs-another-mobile? branch)
+      (mobile-balance? (branch-structure branch))
+      #t))
+
 ;; d):
 ;; Suppose we change the representation of mobiles so that the
 ;; constructors are
 
+(define (make-mobile2 left right)
+  (cons left right))
+
+(define (make-branch2 length structure)
+  (cons length structure))
+
 ;; How much do you need to change your programs to convert to
 ;; the new representation?
+
+;; Just need to change 4 selectors to:
+
+(define (left-branch2 mobile)
+    (car mobile))
+
+(define (right-branch2 mobile)
+    (cdr mobile))
+
+(define (branch-length2 branch)
+    (car branch))
+
+(define (branch-structure2 branch)
+    (cdr branch))
