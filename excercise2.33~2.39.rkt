@@ -87,4 +87,79 @@
              '()
              (cons (accumulate op init (map car seqs))
                    (accumulate-n op init (map cdr seqs)))))
-             
+
+
+;; Excercise 2.37:
+;; Suppose we represent vectors v = (v_i) as sequences
+;; of numbers, and matrices m = (m_ij ) as sequences of vectors (the
+;; rows of the matrix). For example, the matrix
+
+;; 1 2 3 4
+;; 4 5 6 6
+;; 6 7 8 9
+
+;; is represented as the sequence ((1 2 3 4) (4 5 6 6) (6 7 8
+;; 9)). With this representation, we can use sequence operations to
+;; concisely express the basic matrix and vector operations. These
+;; operations (which are described in any book on matrix algebra)
+;; are the following:
+
+;; (dot-product v w) returns the sum sum(vi*wi) ,
+;; (matrix-*-vector m v) returns the vector t, where t_i = sum(m_ij*v_j) ,
+;; (matrix-*-matrix m n) returns the matrix p, where p_ij = sum(m_ik*n_kj) ,
+;; (transpose m) returns the matrix n, where n_ij = m_ji .
+
+(define (dot-product v w)
+  (accumulate + 0 (map * v w)))
+
+;; Fill in the missing expressions in the following procedures for computing
+;; the other matrix operations. (The procedure accumulate-n
+;; is defined in Exercise 2.36.)
+
+(define (matrix-*-vector m v)
+  (map (lambda (col)
+         (dot-product col v))
+       m))
+
+(define (transpose mat)
+  (accumulate-n cons '() mat))
+
+(define (matrix-*-matrix m n)
+  (let ((cols (transpose n)))
+    (map (lambda (col-of-m)
+           (map (lambda (col-of-cols)
+                  (dot-product col-of-m
+                               col-of-cols))
+                cols))
+         m)))
+
+(define m (list (list 1 2 3 4)
+                (list 4 5 6 6)
+                (list 6 7 8 9)))
+
+;; Excercise 2.38:
+;; The accumulate procedure is also known as
+;; fold-right, because it combines the first element of the sequence
+;; with the result of combining all the elements to the right.
+;; There is also a fold-left, which is similar to fold-right, except
+;; that it combines elements working in the opposite direction:
+
+(define fold-right accumulate)
+
+(define (fold-left op initial sequence)
+  (define (iter result rest)
+    (if (null? rest)
+        result
+        (iter (op result (car rest))
+              (cdr rest))))
+  (iter initial sequence))
+
+;; What are the values of:
+
+;; (fold-right / 1 (list 1 2 3)) => 3/2
+;; (fold-left / 1 (list 1 2 3))  => 1/6
+;; (fold-right list nil (list 1 2 3))
+;; (fold-left list nil (list 1 2 3))
+
+;; Give a property that op should satisfy to guarantee that fold-right
+;; and fold-left will produce the same values for any sequence
