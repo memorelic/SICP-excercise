@@ -199,3 +199,74 @@
 
 (define (branch-structure2 branch)
     (cdr branch))
+
+;; Excercise 2.30:
+;; Define a procedure square-tree analogous to the
+;; square-list procedure of Exercise 2.21. That is, square-tree
+;; should behave as follows:
+
+;(square-tree
+; (list 1
+;       (list 2 (list 3 4) 5)
+;       (list 6 7)))
+
+;; => (1 (4 (9 16) 25) (36 (49))
+
+;; Define square-tree both directly (i.e., without using any higherorder
+;; procedures) and also by using map and recursion.
+
+(define (square-tree tree)
+  (define (square x) (* x x))
+  (cond [(null? tree) '()]
+        [(not (pair? tree)) (square tree)]
+        [else
+         (cons (square-tree (car tree))
+               (square-tree (cdr tree)))]))
+
+(define (square-tree2 tree)
+  (define (square x) (* x x))
+  (map (lambda (subtree)
+         (if (pair? subtree)
+             (square-tree2 subtree)
+             (square subtree)))
+       tree))
+
+;(square-tree2
+; (list 1
+;       (list 2 (list 3 4) 5)
+;       (list 6 7)))
+
+;; Excercise 2.31:
+;; Abstract your answer to Exercise 2.30 to produce a
+;; procedure tree-map with the property that square-tree could be
+;; defined as
+
+;; (define (square-tree tree) (tree-map square tree))
+
+(define (tree-map proc tree)
+  (map (lambda (subtree)
+         (cond [(null? subtree) '()]
+               [(not (pair? subtree)) (proc subtree)]
+               [else
+                (tree-map proc subtree)]))
+       tree))
+
+;; Excercise 2.32:
+;; We can represent a set as a list of distinct elements,
+;; and we can represent the set of all subsets of the set as a list of
+;; lists. For example, if the set is (1 2 3), then the set of all subsets is
+;; (() (3) (2) (2 3) (1) (1 3) (1 2) (1 2 3)). Complete the
+;; following definition of a procedure that generates the set of subsets
+;; of a set and give a clear explanation of why it works:
+
+(define (subsets s)
+  (if (null? s)
+      (list '())
+      (let ((rest (subsets (cdr s))))
+        (append rest (map (lambda (x) (cons (car s) x)) rest)))))
+
+;; my mind has just been light on a wonderful solution to excercise 2.29,
+;; I will finish it on days later.
+
+;; In general, It will not need to define so much helper funcion,
+;; just use recersion to solve the problem.
