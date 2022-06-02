@@ -163,3 +163,6 @@
 
 ;; Give a property that op should satisfy to guarantee that fold-right
 ;; and fold-left will produce the same values for any sequence
+
+;; If two result produced by fold-right and fold-left are the same, then the procedure which
+;; transfered as a argument must be satisfy Commutative property(交换律)
