@@ -143,6 +143,14 @@
   (+ (branch-weight (left-branch mobile))
      (branch-weight (right-branch mobile))))
 
+;; pair to construct mobile and structure.
+(define (total-weight2 mobile)
+  (cond [(null? mobile) 0]
+        [(not (pair? mobile)) mobile]
+        [else
+         (+ (total-weight (branch-structure (left-branch mobile)))
+            (total-weight (branch-structure (right-branch mobile))))]))
+
 ;; c):
 ;; A mobile is said to be balanced if the torque applied by its topleft
 ;; branch is equal to that applied by its top-right branch (that
@@ -172,6 +180,17 @@
   (if (hangs-another-mobile? branch)
       (mobile-balance? (branch-structure branch))
       #t))
+
+;; pair to construct mobile and structure.
+(define (torque branch)
+  (* (branch-length branch) (total-weight (branch-structure branch))))
+
+(define (balance? mobile)
+  (if (not (pair? mobile))
+      #t
+      (and (= (torque (left-branch mobile)) (torque (right-branch mobile)))
+           (balance? (branch-structure (left-branch mobile)))
+           (balance? (branch-structure (right-branch mobile))))))
 
 ;; d):
 ;; Suppose we change the representation of mobiles so that the

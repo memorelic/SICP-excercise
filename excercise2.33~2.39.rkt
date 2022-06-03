@@ -163,3 +163,24 @@
 
 ;; Give a property that op should satisfy to guarantee that fold-right
 ;; and fold-left will produce the same values for any sequence
+
+;; Excercise 2.39:
+;; Complete the following definitions of reverse
+;; (Exercise 2.18) in terms of fold-right and fold-left from
+;; Exercise 2.38.
+
+(define (right-reverse sequence)
+  (fold-right (lambda (x y)
+                (append y (list x)))
+              '()
+              sequence))
+
+(define (left-reverse sequence)
+  (fold-left (lambda (x y)
+               (cons y x))
+             '()
+             sequence))
+
+
+
+
