@@ -69,7 +69,20 @@
 ;; positive integers i , j , and k less than or equal to a given integer
 ;; n that sum to a given integer s.
 
+(define (unique-triples n)
+  (flatmap (lambda (i)
+             (map (lambda (j)
+                    (cons i j))
+                  (unique-pairs (- i 1))))
+           (enumerate-interval 1 n)))
+  
+(define (triple-sum-equal-to? sum triple)
+  (= sum (accumulate + 0 triple)))
 
+(define (triples-equal-to triples sum)
+  (filter (lambda (current-triple)
+            (triple-sum-equal-to? sum current-triple))
+          triples))
 
 ;; Excercise 2.42:
 ;; The “eight-queens puzzle” asks how to place eight
@@ -125,6 +138,55 @@
 ;; safe—the other queens are already guaranteed safe with respect to
 ;; each other.)
 
+(define empty-board '())
+
+;; 此处需要注意顺序，我们将新加入的棋子放在列表的最后
+(define (adjoin-position row col positions)
+  (append positions (list (make-position row col))))
+
+
+(define (make-position row col)
+  (cons row col))
+(define (position-row position)
+  (car position))
+(define (position-col position)
+  (cdr position))
+
+(define (safe? col positions)
+  (define (attacks? q1 q2)
+    ; Horizontal coordinate
+    (or (= (position-row q1) (position-row q2))
+    ; Diagonal coordinate
+        (= (abs (- (position-row q1) (position-row q2)))
+           (abs (- (position-col q1) (position-col q2))))))
+  
+  (define (iter q board)
+    (or (null? board)
+        (and (not (attacks? q (car board)))
+             (iter q (cdr board)))))
+  
+  (let ((kth-queen (list-ref positions (- col 1)))
+        (other-queens (filter (lambda (q)
+                                (not (= col (position-col q))))
+                              positions)))
+    (iter kth-queen other-queens)))
+  
+    
+
+(define (queens board-size)
+  (define (queen-cols k)
+    (if (= k 0)
+        (list empty-board)
+        (filter
+         (lambda (positions) (safe? k positions))
+         (flatmap
+          (lambda (rest-of-queens)
+            (map (lambda (new-row)
+                   (adjoin-position new-row k rest-of-queens))
+                 (enumerate-interval 1 board-size)))
+          (queen-cols (- k 1))))))
+  (queen-cols board-size))
+
 ;; Excercise 2.43:
 ;; Louis Reasoner is having a terrible time doing
 ;; Exercise 2.42. His queens procedure seems to work, but it runs
@@ -144,3 +206,22 @@
 ;; Estimate how long it will take Louis’s program to solve the
 ;; eight-queens puzzle, assuming that the program in Exercise 2.42
 ;; solves the puzzle in time T.
+
+;; This new implementation works, but it runs extremely slowly,
+;; because the order of nested mappings in flatmap has been swapped.
+;; Our task is to explain why this interchange makes the program run slowly,
+;; and to estimate how long it will take the new implementation to solve the eight queens puzzle
+;; assuming that the original implementation solved the puzzle in time T.
+
+;; In the original solution, queen-cols is called once for each column in the board.
+;; This is an expensive procedure to call, since it generates
+;; the sequence of all possible ways to place k queens in k columns.
+;; By moving queen-cols so it gets called by flatmap,
+;; we're transforming a linear recursive process to a tree-recursive process.
+;; The flatmap procedure is called for each row of the kth column,
+;; so the new procedure is generating all the possible solutions for the first k - 1 columns
+;; for each one of these rows.
+
+;; We learned back in section 1.2.2 that a tree-recursive process grows exponentially.
+;; If it takes time T to execute the original version of queens for a given board size,
+;; we can expect the new version to take roughly T^board-size time to execute.
