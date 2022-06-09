@@ -1,0 +1,155 @@
+#lang racket
+
+;; Excercise 2.53:
+;; What would the interpreter print in response to
+;; evaluating each of the following expressions?
+
+; (list 'a 'b 'c) => ('a 'b 'c)
+; (list (list 'george)) => '((george))
+; (cdr '((x1 x2) (y1 y2))) => '((y1 y2))
+; (cadr '((x1 x2) (y1 y2)))  => '(y1 y2)
+; (pair? (car '(a short list))) => false
+; (memq 'red '((red shoes) (blue socks))) => false
+; (memq 'red '(red shoes blue socks)) => '(red shoes blue socks)
+
+;; Excercise 2.54:
+;; Two lists are said to be equal? if they contain equal
+;; elements arranged in the same order. For example
+
+; (equal? '(this is a list) '(this is a list))
+
+;; is true, but
+
+; (equal? ’(this is a list) ’(this (is a) list))
+
+;; is false. To be more precise, we can define equal? recursively in
+;; terms of the basic eq? equality of symbols by saying that a and b
+;; are equal? if they are both symbols and the symbols are eq?, or
+;; if they are both lists such that (car a) is equal? to (car b) and
+;; (cdr a) is equal? to (cdr b). Using this idea, implement equal?
+;; as a procedure.
+
+(define (equal? list1 list2) 
+   (cond ((and (not (pair? list1)) (not (pair? list2))) 
+          (eq? list1 list2)) 
+         ((and (pair? list1) (pair? list2)) 
+          (and (equal? (car list1) (car list2)) (equal? (cdr list1) (cdr list2)))) 
+         (else false)))
+
+;; Excercise 2.55:
+;; Eva Lu Ator types to the interpreter the expression
+; (car ”abracadabra)
+;; To her surprise, the interpreter prints back quote. Explain.
+
+;; (car ''something) is treated by the interpreter as: 
+;; (car (quote (quote something))) 
+;; The first occurrence of 'quote' quotes the next entity 
+;; (quote something),which is actually a list with two elements, so 
+;; caring this list yields 'quote. 
+
+
+(define (variable? e)
+  (symbol? e))
+
+(define (same-variable? v1 v2)
+  (and (variable? v1) (variable? v2) (eq? v1 v2)))
+
+(define (=number? exp num)
+  (and (number? exp) (= exp num)))
+
+(define (make-sum a1 a2)
+  (cond [(=number? a1 0) a2]
+        [(=number? a2 0) a1]
+        [(and (number? a1) (number? a2)) (+ a1 a2)]
+        [else (list '+ a1 a2)]))
+
+(define (make-product m1 m2)
+  (cond [(or (=number? m1 0) (=number? m2 0)) 0]
+        [(=number? m1 1) m2]
+        [(=number? m2 1) m1]
+        [(and (number? m1) (number? m2)) (* m1 m2)]
+        [else (list '* m1 m2)]))
+
+(define (sum? e)
+  (and (pair? e) (eq? (car e) '+)))
+
+(define (product? e)
+  (and (pair? e) (eq? (car e) '*)))
+
+;; 被加数
+(define (addend s)
+  (cadr s))
+
+;; 加数
+(define (augend s)
+  (caddr s))
+
+
+(define (multiplier s)
+  (cadr s))
+
+(define (multiplicand s)
+  (caddr s))
+
+(define (deriv exp var)
+  (cond [(number? exp) 0]
+        [(variable? exp)
+         (if (same-variable? exp var) 1 0)]
+        [(sum? exp)
+         (make-sum (deriv (addend exp) var)
+                   (deriv (augend exp) var))]
+        [(product? exp)
+         (make-sum
+          (make-product (multiplier exp)
+                        (deriv (multiplicand exp) var))
+          (make-product (deriv (multiplier exp) var)
+                        (multiplicand exp)))]
+        [else
+         (error "unknown expression type -- DERIV" exp)]))
+
+;; Excercise 2.56:
+;; Show how to extend the basic differentiator to handle
+;; more kinds of expressions. For instance, implement the differentiation
+;; rule:
+
+;; d(u^n)/dx = n*u^(n-1)*d(u)/dx
+
+;; by adding a new clause to the deriv program and defining
+;; appropriate procedures exponentiation?, base, exponent, and
+;; make-exponentiation. (You may use the symbol ^ to denote
+;; exponentiation.) Build in the rules that anything raised to the
+;; power 0 is 1 and anything raised to the power 1 is the thing itself.
+
+;; Excercise 2.57:
+;; Extend the differentiation program to handle sums
+;; and products of arbitrary numbers of (two or more) terms. Then
+;; the last example above could be expressed as
+
+; (deriv '(* x y (+ x 3)) 'x)
+
+;; Try to do this by changing only the representation for sums and
+;; products, without changing the deriv procedure at all. For exam205
+;; ple, the addend of a sum would be the first term, and the augend
+;; would be the sum of the rest of the terms.
+
+;; Excercise 2.58:
+;; Suppose we want to modify the differentiation
+;; program so that it works with ordinary mathematical notation,
+;; in which + and * are infix rather than prefix operators. Since the
+;; differentiation program is defined in terms of abstract data, we
+;; can modify it to work with different representations of expressions
+;; solely by changing the predicates, selectors, and constructors that
+;; define the representation of the algebraic expressions on which
+;; the differentiator is to operate.
+
+;; a).Show how to do this in order to differentiate algebraic expressions
+;;    presented in infix form, such as (x + (3 * (x + (y +2)))).
+;;    To simplify the task, assume that + and * always take
+;;    two arguments and that expressions are fully parenthesized.
+
+;; b).The problem becomes substantially harder if we allow standard
+;;    algebraic notation, such as (x + 3 * (x + y + 2)), which
+;;    drops unnecessary parentheses and assumes that multiplication
+;;    is done before addition. Can you design appropriate
+;;    predicates, selectors, and constructors for this notation such
+;;    that our derivative program still works?
