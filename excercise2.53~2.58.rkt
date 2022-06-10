@@ -57,39 +57,13 @@
 (define (=number? exp num)
   (and (number? exp) (= exp num)))
 
-(define (make-sum a1 a2)
-  (cond [(=number? a1 0) a2]
-        [(=number? a2 0) a1]
-        [(and (number? a1) (number? a2)) (+ a1 a2)]
-        [else (list '+ a1 a2)]))
 
-(define (make-product m1 m2)
-  (cond [(or (=number? m1 0) (=number? m2 0)) 0]
-        [(=number? m1 1) m2]
-        [(=number? m2 1) m1]
-        [(and (number? m1) (number? m2)) (* m1 m2)]
-        [else (list '* m1 m2)]))
 
 (define (sum? e)
   (and (pair? e) (eq? (car e) '+)))
 
 (define (product? e)
   (and (pair? e) (eq? (car e) '*)))
-
-;; 被加数
-(define (addend s)
-  (cadr s))
-
-;; 加数
-(define (augend s)
-  (caddr s))
-
-
-(define (multiplier s)
-  (cadr s))
-
-(define (multiplicand s)
-  (caddr s))
 
 
 
@@ -134,6 +108,59 @@
 ;; ple, the addend of a sum would be the first term, and the augend
 ;; would be the sum of the rest of the terms.
 
+;(define (make-sum a1 a2)
+;  (cond [(=number? a1 0) a2]
+;        [(=number? a2 0) a1]
+;        [(and (number? a1) (number? a2)) (+ a1 a2)]
+;        [else (list '+ a1 a2)]))
+
+;(define (make-product m1 m2)
+;  (cond [(or (=number? m1 0) (=number? m2 0)) 0]
+;        [(=number? m1 1) m2]
+;        [(=number? m2 1) m1]
+;        [(and (number? m1) (number? m2)) (* m1 m2)]
+;        [else (list '* m1 m2)]))
+
+(define (single-operand? l)
+  (and (list? l) (= (length l) 1)))
+
+(define (make-sum a1 . a2)
+  (if (single-operand? a2)
+      (let ((op2 (car a2)))
+        (cond [(=number? a1 0) op2]
+              [(=number? op2 0) a1]
+              [(and (number? a1) (number? op2)) (+ a1 op2)]
+              [else (list '+ a1 op2)]))
+      (cons '+ (cons a1 a2))))
+
+(define (addend s)
+  (cadr s))
+
+(define (augend s)
+  (let ((tail (cddr s)))
+    (if (single-operand? tail)
+        (car tail)
+        (apply make-sum tail))))
+
+(define (multiplier p)
+  (cadr p))
+
+(define (multiplicand p)
+  (let ((tail (cddr p)))
+    (if (single-operand? tail)
+        (car tail)
+        (apply make-product tail))))
+
+(define (make-product m1 . m2)
+  (if (single-operand? m2)
+      (let ((op2 (car m2)))
+        (cond [(or (=number? m1 0) (=number? op2 0)) 0]
+              [(=number? m1 1) op2]
+              [(=number? op2 1) m1]
+              [(and (number? m1) (number? op2)) (* m1 op2)]
+              [else (list '* m1 op2)]))
+      (cons '* (cons m1 m2))))
+
 ;; Excercise 2.58:
 ;; Suppose we want to modify the differentiation
 ;; program so that it works with ordinary mathematical notation,
@@ -155,6 +182,21 @@
 ;;    is done before addition. Can you design appropriate
 ;;    predicates, selectors, and constructors for this notation such
 ;;    that our derivative program still works?
+
+
+;; a)
+;; 如果只是换成中缀表示，只允许操作数有两个参数并且用括号隔开，类似 (x + (3 * (x + (y + 2))))这样的写法,
+;; 那么所有要改的部分只有构造函数、选择函数、谓词函数，例如，将(list '* m1 m2)改为(list m1 '* m2)，
+;; 选择函数和谓词函数的判断相应修改。
+;; deriv的这个函数整体上不用修改。
+
+;; b)
+;; 如果允许标准代数写法，即 (x + 3 * (x + y + 2))，
+;; 则没办法只是通过修改谓词、选择函数和构造函数来达到正确计算求导的目的；
+;; 因为此时我们需要判断各个符号的优先级关系。
+;; 一个简单的处理办法是将优先级处理单独写一个函数，将标准代数写法转换成波兰式写法，
+;; 例如，该函数的工作方式是：interp('(x + 3 * (x + y + 2))) => '(+ x (* 3 (+ x y 2)))
+;; 然后我们就能够使用现目前的deriv进行求解。
 
 
 (define (deriv exp var)
