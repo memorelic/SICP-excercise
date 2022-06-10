@@ -91,21 +91,7 @@
 (define (multiplicand s)
   (caddr s))
 
-(define (deriv exp var)
-  (cond [(number? exp) 0]
-        [(variable? exp)
-         (if (same-variable? exp var) 1 0)]
-        [(sum? exp)
-         (make-sum (deriv (addend exp) var)
-                   (deriv (augend exp) var))]
-        [(product? exp)
-         (make-sum
-          (make-product (multiplier exp)
-                        (deriv (multiplicand exp) var))
-          (make-product (deriv (multiplier exp) var)
-                        (multiplicand exp)))]
-        [else
-         (error "unknown expression type -- DERIV" exp)]))
+
 
 ;; Excercise 2.56:
 ;; Show how to extend the basic differentiator to handle
@@ -119,6 +105,22 @@
 ;; make-exponentiation. (You may use the symbol ^ to denote
 ;; exponentiation.) Build in the rules that anything raised to the
 ;; power 0 is 1 and anything raised to the power 1 is the thing itself.
+
+(define (make-exponentiation b e)
+  (cond [(= e 0) 1]
+        [(= e 1) b]
+        [else
+         (list '^ b e)]))
+
+(define (base exp)
+  (cadr exp))
+
+(define (exponent exp)
+  (caddr exp))
+
+(define (exponentiation? exp)
+  (and (pair? exp) (eq? (car exp) '^)))
+
 
 ;; Excercise 2.57:
 ;; Extend the differentiation program to handle sums
@@ -153,3 +155,30 @@
 ;;    is done before addition. Can you design appropriate
 ;;    predicates, selectors, and constructors for this notation such
 ;;    that our derivative program still works?
+
+
+(define (deriv exp var)
+  (cond [(number? exp) 0]
+        [(variable? exp)
+         (if (same-variable? exp var) 1 0)]
+        [(sum? exp)
+         (make-sum (deriv (addend exp) var)
+                   (deriv (augend exp) var))]
+        [(product? exp)
+         (make-sum
+          (make-product (multiplier exp)
+                        (deriv (multiplicand exp) var))
+          (make-product (deriv (multiplier exp) var)
+                        (multiplicand exp)))]
+        [(exponentiation? exp)
+         (let ((n (exponent exp))
+               (u (base exp)))
+           (make-product
+            n
+            (make-product
+             (make-exponentiation
+              u
+              (- n 1))
+             (deriv u var))))]
+        [else
+         (error "unknown expression type -- DERIV" exp)]))
