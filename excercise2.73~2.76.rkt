@@ -262,8 +262,7 @@
          (if (same-variable? exp var) 1 0)]
         [else
          ((get 'deriv (operator exp))
-          (operands exp)
-          var)]))
+          (operands exp) var)]))
 
 (define (operator exp) (car exp))
 
@@ -286,31 +285,82 @@
   ;; internal procedures
   (define (=number? exp num)
     (and (number? exp) (= exp num)))
+
+  (define (single-operand? l)
+    (and (list? l) (= (length l) 1)))
+  
   (define (addend s)
     (car s))
+
   (define (augend s)
-    (cadr s))
-  (define (make-sum x y)
-    (cond [(=number? x 0) y]
-          [(=number? y 0) x]
-          [(and (number? x) (number? y)) (+ x y)]
-          [else
-           (attach-tag '+ x y)]))
+    (let ((tail (cdr s)))
+      (if (single-operand? tail)
+          (car tail)
+          (apply make-sum tail))))
+
+  (define (make-sum a1 . a2)
+    (if (single-operand? a2)
+        (let ((op2 (car a2)))
+          (cond [(=number? a1 0) op2]
+                [(=number? op2 0) a1]
+                [(and (number? a1) (number? op2)) (+ a1 op2)]
+                [else (list '+ a1 op2)]))
+        (cons '+ (cons a1 a2))))
+
   ;; interface to the rest of the system
+  (put 'make-sum '+ make-sum)
+  
   (put 'deriv '+
        (lambda (exp var)
          (make-sum (deriv (addend exp) var)
                    (deriv (augend exp) var))))
   'done)
 
-;(define (make-sum x y)
-;    ((get 'make-sum '+) x y))
+(define (install-product-deriv-package)
+  ;; internal procedures
+  (define (=number? exp num)
+    (and (number? exp) (= exp num)))
 
-;(define (addend sum)
-;    ((get 'addend '+) (contents sum)))
+  (define (single-operand? l)
+    (and (list? l) (= (length l) 1)))
+  
+  (define (multiplier p)
+    (car p))
 
-;(define (augend sum)
-;    ((get 'augend '+) (contents sum)))
+  (define (multiplicand p)
+    (let ((tail (cdr p)))
+      (if (single-operand? tail)
+          (car tail)
+          (apply make-product tail))))
+  
+  (define (make-product m1 . m2)
+    (if (single-operand? m2)
+        (let ((op2 (car m2)))
+          (cond [(or (=number? m1 0) (=number? op2 0)) 0]
+                [(=number? m1 1) op2]
+                [(=number? op2 1) m1]
+                [(and (number? m1) (number? op2)) (* m1 op2)]
+                [else (list '* m1 op2)]))
+        (cons '* (cons m1 m2))))
+
+  (define (make-sum a1 a2) ((get 'make-sum '+) a1 a2))
+  
+   ;; interface to the rest of the system
+
+  (put 'make-product '* make-product)
+  (put 'deriv '*
+       (lambda (exp var)
+         (make-sum
+          (make-product (multiplier exp)
+                        (deriv (multiplicand exp) var))
+          (make-product (deriv (multiplier exp) var)
+                        (multiplicand exp)))))
+  'done)
+
+(install-sum-deriv-package)
+(install-product-deriv-package)
+;(deriv '(+ x y z) 'x)
+(deriv '(* x y z) 'y)
 
 ;; c. Choose any additional differentiation rule that you like, such as
 ;;    the one for exponents (Exercise 2.56), and install it in this datadirected
