@@ -282,11 +282,10 @@
 ;;    the auxiliary code required to install them in the table used by
 ;;    the program above.
 
-(define (=number? exp num)
-  (and (number? exp) (= exp num)))
-
 (define (install-sum-deriv-package)
   ;; internal procedures
+  (define (=number? exp num)
+    (and (number? exp) (= exp num)))
   (define (addend s)
     (car s))
   (define (augend s)
@@ -298,23 +297,20 @@
           [else
            (attach-tag '+ x y)]))
   ;; interface to the rest of the system
-  (put 'addend '+ addend)
-  (put 'augend '+ augend)
-  (put 'make-sum '+ make-sum)
   (put 'deriv '+
        (lambda (exp var)
          (make-sum (deriv (addend exp) var)
                    (deriv (augend exp) var))))
   'done)
 
-(define (make-sum x y)
-    ((get 'make-sum '+) x y))
+;(define (make-sum x y)
+;    ((get 'make-sum '+) x y))
 
-(define (addend sum)
-    ((get 'addend '+) (contents sum)))
+;(define (addend sum)
+;    ((get 'addend '+) (contents sum)))
 
-(define (augend sum)
-    ((get 'augend '+) (contents sum)))
+;(define (augend sum)
+;    ((get 'augend '+) (contents sum)))
 
 ;; c. Choose any additional differentiation rule that you like, such as
 ;;    the one for exponents (Exercise 2.56), and install it in this datadirected
