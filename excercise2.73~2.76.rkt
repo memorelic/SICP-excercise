@@ -314,7 +314,7 @@
        (lambda (exp var)
          (make-sum (deriv (addend exp) var)
                    (deriv (augend exp) var))))
-  'done)
+  "deriv-sum-pack-installed")
 
 (define (install-product-deriv-package)
   ;; internal procedures
@@ -355,16 +355,45 @@
                         (deriv (multiplicand exp) var))
           (make-product (deriv (multiplier exp) var)
                         (multiplicand exp)))))
-  'done)
+  "deriv-product-pack-installed")
 
-(install-sum-deriv-package)
-(install-product-deriv-package)
-;(deriv '(+ x y z) 'x)
-(deriv '(* x y z) 'y)
 
 ;; c. Choose any additional differentiation rule that you like, such as
 ;;    the one for exponents (Exercise 2.56), and install it in this datadirected
 ;;    system.
+
+(define (install-exponent-deriv-package)
+  ;; internal procedures
+  (define (make-exponentiation b e)
+  (cond [(= e 0) 1]
+        [(= e 1) b]
+        [else
+         (list '^ b e)]))
+
+  (define (base exp)
+    (car exp))
+
+  (define (exponent exp)
+    (cadr exp))
+
+  (define (exponentiation? exp)
+    (and (pair? exp) (eq? (car exp) '^)))
+
+  (define (make-product m1 m2) ((get 'make-product '*) m1 m2))
+  ;; interface to the rest of the system
+  
+  (put 'deriv '^
+       (lambda (exp var)
+         (let ((n (exponent exp))
+               (u (base exp)))
+           (make-product
+            n
+            (make-product
+             (make-exponentiation
+              u
+              (- n 1))
+             (deriv u var))))))
+  "deriv-exponent-pack-installed")
 
 ;; d. In this simple algebraic manipulator the type of an expression
 ;;    is the algebraic operator that binds it together. Suppose, however,
@@ -374,3 +403,172 @@
 ;    ((get (operator exp) ’deriv) (operands exp) var)
 
 ;; What corresponding changes to the derivative system are required?
+
+;; 程序的主体无需变动，只需要修改各个package中调用put的参数的位置。
+;; 例如：(put 'make-sum '+ make-sum) -> (put '+ 'make-sum make-sum)
+;; make-sum过程本身不用修改。
+
+(install-sum-deriv-package)
+(install-product-deriv-package)
+(install-exponent-deriv-package)
+
+;; Excercise 2.74:
+;; Insatiable Enterprises, Inc., is a highly decentralized
+;; conglomerate company consisting of a large number of independent
+;; divisions located all over the world. The company’s
+;; computer facilities have just been interconnected by means of a
+;; clever network-interfacing scheme that makes the entire network
+;; appear to any user to be a single computer. Insatiable’s president,
+;; in her first attempt to exploit the ability of the network to extract
+;; administrative information from division files, is dismayed to discover
+;; that, although all the division files have been implemented as
+;; data structures in Scheme, the particular data structure used varies
+;; from division to division. A meeting of division managers is hastily
+;; called to search for a strategy to integrate the files that will satisfy
+;; headquarters’ needs while preserving the existing autonomy of the
+;; divisions.
+;; Show how such a strategy can be implemented with data-directed
+;; programming. As an example, suppose that each division’s personnel
+;; records consist of a single file, which contains a set of records
+;; keyed on employees’ names. The structure of the set varies from
+;; division to division. Furthermore, each employee’s record is itself
+;; a set (structured differently from division to division) that contains
+;; information keyed under identifiers such as address and salary.
+;; In particular:
+
+;; a. Implement for headquarters a get-record procedure that retrieves
+;;    a specified employee’s record from a specified personnel
+;;    file. The procedure should be applicable to any division’s file.
+;;    Explain how the individual divisions’ files should be structured.
+;;    In particular, what type information must be supplied?
+
+;; b. Implement for headquarters a get-salary procedure that
+;;    returns the salary information from a given employee’s record
+;;    from any division’s personnel file. How should the record be
+;;    structured in order to make this operation work?
+
+
+;; a) and b):
+
+(define (subsidiary file)
+  (if (pair? file)
+      (car file)
+      (error "Corrupted file -- SUBSIDIARY" file)))
+
+(define (filecontent file)
+  (if (pair? file)
+      (cdr file)
+      (error "Corrupted file -- FILECONTENT" file)))
+
+(define (attach-subsidiary subsidiary filecontent)
+  (cons subsidiary filecontent))
+
+(define (install-SiChuan-subsidiary-package)
+  
+  (define (make-record id name salary)
+    (list id name salary))
+
+  (define (employee-id record)
+    (car record))
+  (define (employee-name record)
+    (cadr record))
+  (define (employee-salary record)
+    (caddr record))
+
+  ;; 将这个函数用foldr或foldl改写
+  (define (add-record-to-file file record)
+    (if (null? file)
+        (list record)
+        (append file (list record))))
+
+  (define (make-file)
+    '())
+
+  (define (get-record file name)
+    (car (filter (lambda (record) (eq? (employee-name record) name)) file)))
+  (define (get-salary file name)
+    (employee-salary (car (filter (lambda (record) (eq? (employee-name record) name)) file))))
+
+  ;; interface to the rest of the system
+  ;(define (tag x) (attach-subsidiary 'SiChuan x))
+  ;(put 'create-file 'SiChuan (lambda () (tag (make-file))))
+  ;(put 'make-record 'SiChuan make-record)
+  (put 'get-record 'SiChuan get-record)
+  (put 'get-salary 'SiChuan get-salary)
+  ;(put 'add-record-to-file 'SiChuan add-record-to-file)
+  "SiChuan-subsidiary-package-installed")
+
+(define (install-Tokyo-subsidiary-package)
+  
+  (define (make-record id name salary)
+    (list id name salary))
+
+  (define (employee-id record)
+    (car record))
+  (define (employee-name record)
+    (cadr record))
+  (define (employee-salary record)
+    (caddr record))
+
+  ;; 将这个函数用foldr或foldl改写
+  (define (add-record-to-file file record)
+    (if (null? file)
+        (list record)
+        (append file (list record))))
+
+  (define (make-file)
+    '())
+
+  (define (get-record file name)
+    (car (filter (lambda (record) (eq? (employee-name record) name)) file)))
+  (define (get-salary file name)
+    (employee-salary (car (filter (lambda (record) (eq? (employee-name record) name)) file))))
+
+  ;; interface to the rest of the system
+  ;(define (tag x) (attach-subsidiary 'SiChuan x))
+  ;(put 'create-file 'SiChuan (lambda () (tag (make-file))))
+  ;(put 'make-record 'SiChuan make-record)
+  (put 'get-record 'Tokyo get-record)
+  (put 'get-salary 'Tokyo get-salary)
+  ;(put 'add-record-to-file 'SiChuan add-record-to-file)
+  "Tokyo-subsidiary-package-installed")
+
+(define (get-record file name)
+  ((get 'get-record (subsidiary file)) (filecontent file) name))
+(define (get-salary file name)
+  ((get 'get-salary (subsidiary file)) (filecontent file) name))
+
+;(define (create-SiChuan-file)
+;  (apply (get 'create-file 'SiChuan)))
+(install-SiChuan-subsidiary-package)
+(install-Tokyo-subsidiary-package)
+
+(define SiChuan-file
+  (list 'SiChuan
+        (list 0 "ZhanKe" 2000)
+        (list 1 "ZhuangHao" 2000)
+        (list 2 "ZhouChao" 3000)))
+
+(define Tokyo-file
+  (list 'Tokyo
+        (list 3 "KoJiMa" 6000)
+        (list 4 "MiYaZaKi" 6000)
+        (list 5 "ZhouChao" 4000)))
+
+
+
+;; c. Implement for headquarters a find-employee-record procedure.
+;;    This should search all the divisions’ files for the record of
+;;    a given employee and return the record. Assume that this procedure
+;;    takes as arguments an employee’s name and a list of all
+;;    the divisions’ files.
+
+(define (find-employee-record files name)
+  (map (lambda (file) (get-record file name)) files))
+
+;; d. When Insatiable takes over a new company, what changes must
+;;    be made in order to incorporate the new personnel information
+;;    into the central system?
+
+;; 新公司并购后，现有系统完全不用修改，只需要将写一个新的包；
+;; 增加对应的get-record和get-salary接口即可。
