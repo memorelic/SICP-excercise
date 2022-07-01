@@ -572,3 +572,53 @@
 
 ;; 新公司并购后，现有系统完全不用修改，只需要将写一个新的包；
 ;; 增加对应的get-record和get-salary接口即可。
+
+;; Excercise 2.75:
+;; Implement the constructor make-from-mag-ang in
+;; message-passing style. This procedure should be analogous to the
+;; make-from-real-imag procedure given above.
+
+(define (make-from-mag-ang-dispatch r a)
+  (define (dispatch op)
+    (cond [(eq? op 'real-part) (* r (cos a))]
+          [(eq? op 'imag-part) (* r (sin a))]
+          [(eq? op 'magnitude) r]
+          [(eq? op 'angle) a]
+          [else
+           (error "Unknow op -- MAKE-FROM-MAG-ANG" op)]))
+  dispatch)
+
+;; Excercise 2.76:
+;; As a large system with generic operations evolves,
+;; new types of data objects or new operations may be needed. For
+;; each of the three strategies—generic operations with explicit dispatch,
+;; data-directed style, and message-passing-style—describe
+;; the changes that must be made to a system in order to add new
+;; types or new operations. Which organization would be most
+;; appropriate for a system in which new types must often be added?
+;; Which would be most appropriate for a system in which new
+;; operations must often be added?
+
+;; --- generic operations with explicit dispatch ---
+
+;; 增加新类型的时候，我们必须修改现有通用函数，在其中增加对应tag的对应函数；
+;; 此处涉及对之前代码的修改。
+;; 增加新函数的时候，我们需要增加通用函数，并在其中指定每个类型的函数；
+;; 此处不涉及对之前代码的修改，只有新增。
+
+;; -- data-directed style ---
+
+;; 增加新类型的时候，需要新增一个package，在其中指定类型tag，并将所有操作放入全局函数表中；
+;; 此处不涉及对之前代码的修改,只有新增。
+;; 增加新函数的时候，需要在每个package中新增函数的具体操作，并put新操作进全局函数表中。
+;; 此处涉及对之前代码的修改。
+
+;; -- message-passing style ---
+
+;; 增加新类型的时候，只需要新增“类”的定义，并将各个操作放在类中实现；
+;; 此处不涉及对之前代码的修改,只有新增。
+;; 新增新函数的时候，需要在每个类中增加相应的函数。
+;; 此处涉及对之前代码的修改。
+
+;; 由此我们认为，对于经常添加数据类型的系统，可以使用data-directed或者message-pass
+;; 对于经常增加方法的系统，可以使用explicit-dispatch
