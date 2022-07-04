@@ -8,9 +8,20 @@
     (let ((proc (get op type-tags)))
       (if proc
           (apply proc (map contents args))
-          (error
-           "No method for these types -- APPLY-GENERIC"
-           (list op type-tags))))))
+          (if (= (length args) 2)
+              (let ((type1 (car type-tags))
+                    (type2 (cadr type-tags))
+                    (a1 (car args))
+                    (a2 (cadr args)))
+                (if (equal? type1 type2)    ;此处新增
+                    (error "No method for these types" (list op type-tags))
+                    (let ((t1->t2 (get-coercion type1 type2))
+                          (t2->t1 (get-coercion type2 type1)))
+                      (cond [t1->t2 (apply-generic op (t1->t2 a1) a2)]
+                            [t2->t1 (apply-generic op a1 (t2->t1 a2))]
+                            [else
+                             (error "No method for these types" (list op type-tags))]))))
+                (error "No method for these types" (list op type-tags)))))))
 
 (define (add x y) (apply-generic 'add x y))
 (define (sub x y) (apply-generic 'sub x y))
@@ -33,6 +44,10 @@
        (lambda (x) (tag x)))
   (put 'equ? '(scheme-number scheme-number)
        (lambda (x y) (= x y)))
+
+  ;; Excercise 2.81:
+  (put 'exp '(scheme-number scheme-number)
+       (lambda (x y) (tag (expt x y))))
   "scheme-number-package-installed")
 
 (define (make-scheme-number n)
@@ -295,3 +310,67 @@
 (install-polar-complex-package)
 (install-complex-package)
 
+;; Excercise 2.81:
+;; Louis Reasoner has noticed that apply-generic
+;; may try to coerce the arguments to each other’s type even if they
+;; already have the same type. Therefore, he reasons, we need
+;; to put procedures in the coercion table to coerce arguments of
+;; each type to their own type. For example, in addition to the
+;; scheme-number->complex coercion shown above, he would do:
+
+; (define (scheme-number->scheme-number n) n)
+; (define (complex->complex z) z)
+; (put-coercion ’scheme-number ’scheme-number
+;     scheme-number->scheme-number)
+; (put-coercion ’complex ’complex complex->complex)
+
+;; a. With Louis’s coercion procedures installed, what happens
+;;    if apply-generic is called with two arguments of type
+;;    scheme-number or two arguments of type complex for an
+;;    operation that is not found in the table for those types? For
+;;    example, assume that we’ve defined a generic exponentiation
+;;    operation:
+
+(define (exp x y) (apply-generic 'exp x y))
+
+; (exp 2 3) This can get results.
+; (define two (make-scheme-number 2))
+; (define three (make-scheme-number 3))
+; (exp two three)
+
+;;    and have put a procedure for exponentiation in the Schemenumber
+;;    package but not in any other package:
+
+;;    (put ’exp ’(scheme-number scheme-number)
+;;        (lambda (x y) (tag (expt x y))))
+
+;;    What happens if we call exp with two complex numbers as arguments?
+
+;;    如果加入了强制到自己类型的函数，解释器会假死。
+
+;; b. Is Louis correct that something had to be done about coercion
+;;    with arguments of the same type, or does apply-generic work
+;;    correctly as is?
+
+;;    这种写法并没有修复同类型强制的问题，一旦试图调用不存在的通用操作，解释器就会陷入假死。
+
+;; c. Modify apply-generic so that it doesn’t try coercion if the two
+;;    arguments have the same type.
+
+;;    修改见上文apply-generic
+
+;; Excercise 2.82:
+;; Show how to generalize apply-generic to handle
+;; coercion in the general case of multiple arguments. One strategy is
+;; to attempt to coerce all the arguments to the type of the first argument,
+;; then to the type of the second argument, and so on. Give an
+;; example of a situation where this strategy (and likewise the twoargument
+;; version given above) is not sufficiently general. (Hint:
+;; Consider the case where there are some suitable mixed-type operations
+;; present in the table that will not be tried.)
+
+;; 假设有这样一个继承结构：
+;;   A
+;;  / \
+;; B   C
+;; 当我们遇到传入B和C类变量为参数，这种策略只会试图将B转换为C或将C转换为B，并不会试着调整为A类型，从而调用失败。
