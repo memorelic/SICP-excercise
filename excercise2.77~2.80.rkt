@@ -374,3 +374,20 @@
 ;;  / \
 ;; B   C
 ;; 当我们遇到传入B和C类变量为参数，这种策略只会试图将B转换为C或将C转换为B，并不会试着调整为A类型，从而调用失败。
+
+;; 我认为，解决这个问题的方法如下：
+;; 1. 首先找到参数中位于继承结构最下端类型的参数;
+;; 2. 将这个参数向上转型，并检查参数列表是否全部一致
+;; 3. 是则结束强制过程并进行运算，否则重复1、2
+;; P.S.: 参数类型位于继承结构最下层，意味着它可以调用最多次raise
+
+;; Excercise 2.83:
+;; Suppose you are designing a generic arithmetic system
+;; for dealing with the tower of types shown in Figure 2.25: integer,
+;; rational, real, complex. For each type (except complex), design
+;; a procedure that raises objects of that type one level in the tower.
+;; Show how to install a generic raise operation that will work for
+;; each type (except complex).
+
+(define (raise x) (apply-generic 'raise x))
+;; 其它改动见包中更改
