@@ -48,6 +48,8 @@
   ;; Excercise 2.81:
   (put 'exp '(scheme-number scheme-number)
        (lambda (x y) (tag (expt x y))))
+  ;; Excercise 2.83:
+  ;(put 'raise 'scheme-number
   "scheme-number-package-installed")
 
 (define (make-scheme-number n)
