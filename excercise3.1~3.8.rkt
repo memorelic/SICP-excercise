@@ -1,4 +1,14 @@
-#lang racket
+#lang sicp
+
+(define (square x) (* x x))
+(define random-max 131313136)
+(define random-init 0)
+
+(define (rand-update x)
+  (let ((a (expt 2 31))
+        (c 1103515245)
+        (m (+ random-max 1)))
+    (modulo (+ (* a x) c) m)))
 
 ;; Excercise 3.1:
 ;; An accumulator is a procedure that is called repeatedly
@@ -106,3 +116,88 @@
 (define (call-the-cops)
     (error "You try too much times, calling the cops ..."))
 
+;; Excercise 3.5:
+;; Monte Carlo integration is a method of estimating
+;; definite integrals by means of Monte Carlo simulation. Consider
+;; computing the area of a region of space described by a predicate
+;; P(x, y) that is true for points (x, y) in the region and false for points
+;; not in the region. For example, the region contained within a circle
+;; of radius 3 centered at (5, 7) is described by the predicate that tests
+;; whether (x - 5)^2 + (y - 7)^2 <= 3^2. To estimate the area of the region
+;; described by such a predicate, begin by choosing a rectangle that
+;; contains the region. For example, a rectangle with diagonally opposite
+;; corners at (2, 4) and (8, 10) contains the circle above. The
+;; desired integral is the area of that portion of the rectangle that lies
+;; in the region. We can estimate the integral by picking, at random,
+;; points (x, y) that lie in the rectangle, and testing P(x, y) for each
+;; point to determine whether the point lies in the region. If we try
+;; this with many points, then the fraction of points that fall in the
+;; region should give an estimate of the proportion of the rectangle
+;; that lies in the region. Hence, multiplying this fraction by the area
+;; of the entire rectangle should produce an estimate of the integral.
+
+;; Implement Monte Carlo integration as a procedure estimateintegral
+;; that takes as arguments a predicate P, upper and lower
+;; bounds x1, x2, y1, and y2 for the rectangle, and the number of
+;; trials to perform in order to produce the estimate. Your procedure
+;; should use the same monte-carlo procedure that was used
+;; above to estimate 1⁄4. Use your estimate-integral to produce an
+;; estimate of 1⁄4 by measuring the area of a unit circle.
+
+;; You will find it useful to have a procedure that returns a number
+;; chosen at random from a given range. The following random-inrange
+;; procedure implements this in terms of the random procedure
+;; used in Section 1.2.6, which returns a nonnegative number
+;; less than its input
+
+(define (random-in-range low high)
+  (let ((range (- high low)))
+    (+ low (random range))))
+
+(define (monte-carlo trials experiment)
+  (define (iter trials-remaining trials-passed)
+    (cond [(= trials-remaining 0) (/ trials-passed trials)]
+          [(experiment) (iter (- trials-remaining 1) (+ trials-passed 1))]
+          [else (iter (- trials-remaining 1) trials-passed)]))
+  (iter trials 0))
+
+(define (rect-area x1 x2 y1 y2)
+  (* (abs (- x2 x1)) (abs (- y2 y1))))
+
+(define (estimate-integral p? x1 x2 y1 y2 trials)
+  (* (rect-area x1 x2 y1 y2)
+     (monte-carlo trials
+                 (lambda () (p? (random-in-range x1 x2)
+                                (random-in-range y1 y2))))))
+
+(define (get-pi trials)
+  (exact->inexact
+   (estimate-integral (lambda (x y)
+                        (< (+ (square x) (square y)) 1.0))
+                      -1.0 1.0 -1.0 1.0 trials)))
+
+;; Excercise 3.6:
+;; It is useful to be able to reset a random-number generator
+;; to produce a sequence starting from a given value. Design
+;; a new rand procedure that is called with an argument that is either
+;; the symbol generate or the symbol reset and behaves as follows:
+;; (rand ’generate) produces a new random number; ((rand
+;; ’reset) hnew-valuei) resets the internal state variable to the designated
+;; hnew-valuei. Thus, by resetting the state, one can generate
+;; repeatable sequences. These are very handy to have when testing
+;; and debugging programs that use random numbers.
+
+(define rand
+  (let ((x random-init))
+    (define (dispatch message)
+      (cond [(eq? message 'generate)
+             (begin (set! x (rand-update x))
+                    x)]
+            [(eq? message 'reset)
+             (lambda (new-value) (set! x new-value))]))
+    dispatch))
+
+(define (rand-enumerate times)
+  (if (<= times 0)
+      '()
+      (cons (rand 'generate) (rand-enumerate (- times 1)))))
