@@ -64,27 +64,45 @@
 ;; more than seven consecutive times with an incorrect password,
 ;; it invokes the procedure call-the-cops.
 
-(define (make-account balance password)
-  (define correct-password password)
-  (define incorrect-count 0)
+
+(define (make-account blance password)
   
-  (define (withdraw amount password)
-    (if (eq? correct-password password)
-        (if (>= balance amount)
-            (begin (set! balance (- balance amount))
-                   balance)
-            "Insufficient funds")
-        (display "Incorrect Password")))
+  (let ((max-try-times 7)
+        (try-times 0))
+
+    (define (withdraw amount)
+      (if (>= blance amount)
+          (begin (set! blance (- blance amount))
+                 blance)
+          "Insufficient funds"))
+
+    (define (deposit amount)
+          (set! blance (+ blance amount)))
+
+    (define (password-match? given-password)                         
+      (eq? given-password password))                          
+
+    (define (display-wrong-password-message useless-arg)                
+      (display "Incorrect password"))                                
     
-  (define (deposit amount password)
-    (if (eq? correct-password password)
-        (begin (set! balance (+ balance amount)) balance)
-        (display "Incorrect Password")))
-  
-  (define (dispatch m)
-    (cond [(eq? m 'withdraw) withdraw]
-          [(eq? m 'deposit) deposit]
-          [else
-           (error "Unknow request -- MAKE-ACCOUNT" m)]))
-  dispatch)
+    (define (dispatch given-password mode)          
+      (if (password-match? given-password)                          
+          (begin
+            (set! try-times 0)                          ; 成功登录之后清零计数器
+            (cond ((eq? mode 'withdraw)
+                   withdraw)
+                  ((eq? mode 'deposit)
+                   deposit)
+                  (else
+                   (error "Unknow request -- MAKE-ACCOUNT" mode))))
+          (begin          
+            (set! try-times (+ 1 try-times))            ; 进行计数
+            (if (>= try-times max-try-times)
+                (call-the-cops)
+                display-wrong-password-message))))
+    
+    dispatch))
+
+(define (call-the-cops)
+    (error "You try too much times, calling the cops ..."))
 
