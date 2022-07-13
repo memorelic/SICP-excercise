@@ -272,12 +272,70 @@
 ;; data structure that is used to keep track of which pairs have
 ;; already been counted.)
 
+(define (count-real-pairs x)
+  (length (inner x '())))
+
+(define (false? v)
+  (if (pair? v)
+      #f
+      #t))
+
+(define (inner x memo-list)
+  (if (and (pair? x) (false? (memq x memo-list)))
+      (inner (car x)
+             (inner (cdr x)
+                    (cons x memo-list)))
+      memo-list))
+
 ;; Excercise 3.18:
 ;; Write a procedure that examines a list and determines
 ;; whether it contains a cycle, that is, whether a program that
 ;; tried to find the end of the list by taking successive cdrs would go
 ;; into an infinite loop. Exercise 3.13 constructed such lists.
 
+;; 网上抄的解法，因为第一次想就已经找到常量空间解法了。
+
+(define (isloop? lst)
+    (let ((identity (cons '() '())))
+        (define (iter remain-list)
+            (cond ((null? remain-list)
+                    #f)
+                  ((eq? identity (car remain-list))
+                    #t)
+                  (else
+                    (set-car! remain-list identity)
+                    (iter (cdr remain-list)))))
+        (iter lst)))
+
 ;; Excercise 3.19:
 ;; Redo Exercise 3.18 using an algorithm that takes
 ;; only a constant amount of space. (This requires a very clever idea.)
+
+;; 使用快慢步解决这个问题，快的每次走两步，慢的每次走一步，如果有环那么肯定会相遇
+
+
+(define (loop? lst)
+  (define (safe-cdr l)
+    (if (pair? l)
+        (cdr l)
+        '()))
+  (define (iter a b)
+    (cond [(or (null? a) (null? b)) #f]
+          [(eq? a b) #t]
+          [(eq? a (safe-cdr b)) #t]
+          [else
+           (iter (safe-cdr a) (safe-cdr (safe-cdr b)))]))
+  (iter (safe-cdr lst) (safe-cdr (safe-cdr lst))))
+
+;; Excercise 3.20:
+;; Draw environment diagrams to illustrate the evaluation
+;; of the sequence of expressions
+
+;(define x (cons 1 2))
+;(define z (cons x x))
+;(set-car! (cdr z) 17)
+;(car x)
+;17
+
+;; using the procedural implementation of pairs given above
+;; (Compare Excercise 3.11.)
