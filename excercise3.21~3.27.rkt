@@ -82,6 +82,40 @@
 ;; Complete the definition of make-queue and provide implementations
 ;; of the queue operations using this representation.
 
+(define (make-queue-oop)
+  (let ((front-ptr '())
+        (rear-ptr '()))
+    (define (insert-queue! item)
+      (cond [(empty-queue?)
+             (let ((init-list (list item)))
+               (set! front-ptr init-list)
+               (set! rear-ptr init-list)
+               front-ptr)]
+            [else
+             (let ((new-item (list item)))
+               (set-cdr! rear-ptr new-item)
+               (set! rear-ptr new-item)
+               front-ptr)]))
+    (define (delete-queue!)
+      (cond [(empty-queue?)
+             (error "DELETE! called with an empty queue")]
+            [else
+             (set! front-ptr (cdr front-ptr))
+             front-ptr]))
+    (define (empty-queue?)
+      (null? front-ptr))
+    (define (dispatch m)
+      (cond [(eq? m 'insert-queue!)
+             insert-queue!]
+            [(eq? m 'delete-queue!)
+             (delete-queue!)]
+            [(eq? m 'empty-queue?)
+             (empty-queue?)]
+            [else
+             (error "Unknow operation -- DISPATCH" m)]))
+    dispatch))
+            
+
 ;; Excercise 3.23:
 ;; A deque (“double-ended queue”) is a sequence in
 ;; which items can be inserted and deleted at either the front or the
@@ -91,3 +125,8 @@
 ;; front-delete-deque! and rear-delete-deque!. Show how to
 ;; represent deques using pairs, and give implementations of the
 ;; operations.23 All operations should be accomplished in O(1) steps.
+
+(define (make-deque)
+  (cons '() '()))
+
+(define 
